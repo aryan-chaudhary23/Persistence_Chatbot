@@ -32,7 +32,7 @@ const Messages = () => {
 
       if (currentThread === null) {
         const response = await fetch(
-          "http://127.0.0.1:8000/new_chat",
+          " https://persistence-chatbot-backend.onrender.com/new_chat",
           {
             method: "POST",
             headers: {
@@ -101,7 +101,7 @@ const Messages = () => {
         const threadId = currentThread.thread_id;
 
         const response = await fetch(
-          "http://127.0.0.1:8000/old_chat",
+          " https://persistence-chatbot-backend.onrender.com/old_chat",
           {
             method: "POST",
             headers: {

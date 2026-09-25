@@ -10,7 +10,7 @@ export const StoreProvider = ({ children }) => {
   // Fetch threads from backend
   const fetchThreads = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/threads");
+      const response = await fetch(" https://persistence-chatbot-backend.onrender.com/threads");
 
       if (!response.ok) {
         throw new Error("Failed to fetch threads");
@@ -27,7 +27,7 @@ export const StoreProvider = ({ children }) => {
 
   const deleteThread = async (threadId) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/threads/${threadId}`, {
+      const response = await fetch(` https://persistence-chatbot-backend.onrender.com/threads/${threadId}`, {
         method: "DELETE",
       });
 
@@ -41,7 +41,7 @@ export const StoreProvider = ({ children }) => {
 
   const fetchMessages = async (threadId) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/threads/${threadId}/messages`);
+      const response = await fetch(` https://persistence-chatbot-backend.onrender.com/threads/${threadId}/messages`);
       const data = await response.json();
       setMessages(data);
       console.log("Fetched messages for thread:", threadId, data);
