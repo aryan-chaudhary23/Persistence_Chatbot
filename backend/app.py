@@ -58,6 +58,8 @@ workflow = graph.compile(
     checkpointer=checkpointer
 )
 
+summary_th_id = str("s_td_1")
+
 
 def create_thread(title="New Chat"):
     with psycopg.connect(DATABASE_URL) as conn:
@@ -184,6 +186,12 @@ def old_chat( request: OldChatRequest):
 @app.post("/new_chat")
 def new_chat(request: NewChatRequest):
     message = request.message
+    summary_config ={
+        "configurable": {
+            "thread_id": summary_th_id
+        }
+    }
+    result = workflow.invoke({"messages": [HumanMessage(content=create_summary_prompt)]},config=summary_config)
     thread_id = create_thread(message[:20])  # Use the first 10 characters of the message as the title
     save_message(thread_id, "user", message)
     config = {
