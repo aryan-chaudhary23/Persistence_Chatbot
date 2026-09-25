@@ -386,6 +386,128 @@ This allows the application to support multiple independent conversations.
 
 ---
 
+
+## 🗃️ Database Schema
+
+The application uses PostgreSQL not only for LangGraph persistence, but also for managing the chatbot's **conversation and message data**.
+
+The application-level database is organized around two main tables:
+
+```text
+┌──────────────────────────────┐
+│           threads            │
+├──────────────────────────────┤
+│ 🔑 thread_id   UUID          │
+│    title       TEXT          │
+│    created_at  TIMESTAMPTZ   │
+│    updated_at  TIMESTAMPTZ   │
+└───────────────┬──────────────┘
+                │
+                │ 1 ──────────── N
+                │
+┌───────────────▼──────────────┐
+│          messages            │
+├──────────────────────────────┤
+│ 🔑 id          BIGINT        │
+│ 🔗 thread_id   UUID          │
+│    role        TEXT          │
+│    content     TEXT          │
+│    created_at  TIMESTAMPTZ   │
+└──────────────────────────────┘
+```
+
+### `threads`
+
+The `threads` table represents an individual conversation.
+
+| Column | Type | Purpose |
+|---|---|---|
+| `thread_id` | `UUID` | Primary identifier for the conversation |
+| `title` | `TEXT` | Conversation title shown in the UI |
+| `created_at` | `TIMESTAMPTZ` | Time the conversation was created |
+| `updated_at` | `TIMESTAMPTZ` | Time the conversation was last updated |
+
+### `messages`
+
+The `messages` table stores individual messages belonging to a conversation.
+
+| Column | Type | Purpose |
+|---|---|---|
+| `id` | `BIGINT` | Unique identifier for a message |
+| `thread_id` | `UUID` | References the conversation in `threads` |
+| `role` | `TEXT` | Message role, such as `user` or `assistant` |
+| `content` | `TEXT` | Actual message content |
+| `created_at` | `TIMESTAMPTZ` | Time the message was created |
+
+### 🔗 Relationship
+
+The relationship between the tables is:
+
+```text
+threads.thread_id
+       │
+       │
+       └──────────< messages.thread_id
+```
+
+This represents a **one-to-many relationship**:
+
+```text
+One Thread
+    │
+    ├── Message 1
+    ├── Message 2
+    ├── Message 3
+    └── Message N
+```
+
+For example:
+
+```text
+Thread: "LangGraph Project"
+
+thread_id = 7f2c...a91
+
+        ↓
+
+messages
+────────────────────────────────────────────
+role       content
+────────────────────────────────────────────
+user       "How does LangGraph persistence work?"
+assistant  "LangGraph can persist state..."
+user       "How is PostgreSQL involved?"
+assistant  "PostgreSQL stores the checkpoints..."
+```
+
+### 🧠 Application Data vs LangGraph Checkpoints
+
+There are two related persistence concepts in the project:
+
+**Application-level tables**
+
+```text
+threads
+   ↓
+messages
+```
+
+These support the chatbot application's conversation list, titles, and message history.
+
+**LangGraph persistence**
+
+```text
+LangGraph
+    ↓
+PostgreSQL Checkpointer
+    ↓
+Workflow checkpoints / state
+```
+
+The LangGraph checkpointer is responsible for persisting **workflow state**, while the application's `threads` and `messages` tables provide a clean data model for the frontend and conversation management.
+
+This separation makes it easier to build features such as conversation lists, message history, thread management, and eventually user-specific conversations.
+
 ## 🔐 Environment Variables
 
 The application expects sensitive configuration to be supplied through environment variables.
