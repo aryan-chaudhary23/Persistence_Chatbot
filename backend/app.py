@@ -186,13 +186,25 @@ def old_chat( request: OldChatRequest):
 @app.post("/new_chat")
 def new_chat(request: NewChatRequest):
     message = request.message
-    summary_config ={
-        "configurable": {
-            "thread_id": summary_th_id
-        }
-    }
-    result = workflow.invoke({"messages": [HumanMessage(content=create_summary_prompt)]},config=summary_config)
-    thread_id = create_thread(message[:20])  # Use the first 10 characters of the message as the title
+    create_summary_prompt = f"""
+    Generate a short, meaningful title for a new chat conversation.
+
+    User message:
+    {message}
+
+    Rules:
+    - Maximum 5 words.
+    - Return only the title.
+    - Do not include quotation marks.
+    - Do not include explanations.
+    """
+    result = model.invoke([HumanMessage(content=create_summary_prompt)])
+    title = str(result.content).strip().strip('"')
+
+    # Fallback if the model returns an empty title
+    if not title:
+        title = message[:20]
+    thread_id = create_thread(title)  # Use the generated title as the thread name
     save_message(thread_id, "user", message)
     config = {
     "configurable": {
