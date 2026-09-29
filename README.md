@@ -31,6 +31,7 @@ The project combines:
 - ⚛️ **React** for the frontend
 - 🎨 **Tailwind CSS** for the interface
 - 🔗 **React Context / Store Context** for frontend state management
+- 📊 **LangSmith** for LLM/LangGraph observability, tracing, and thread-level run inspection
 - ☁️ **Render** for deployment
 
 > **Core idea:** Build a chatbot that treats conversation state as persistent application data rather than temporary in-memory state.
@@ -88,6 +89,8 @@ Load checkpoint using thread_id
 Hugging Face LLM
         ↓
 Generate response
+        ↓
+LangSmith records the LangGraph/LLM execution trace
         ↓
 Save updated state to PostgreSQL
         ↓
@@ -185,6 +188,7 @@ The model can be changed through the backend configuration without redesigning t
 | LLM | Hugging Face |
 | Database | PostgreSQL |
 | Persistence | LangGraph PostgreSQL Checkpointer |
+| Observability | LangSmith |
 | Language | Python + JavaScript |
 | Deployment | Render |
 
@@ -517,7 +521,13 @@ Typical configuration:
 ```env
 HF_TOKEN=...
 DATABASE_URL=...
+LANGSMITH_API_KEY=...
+LANGSMITH_TRACING=true
+LANGSMITH_ENDPOINT=https://api.smith.langchain.com
+LANGSMITH_PROJECT=your-project-name
 ```
+
+The exact LangSmith variable names and project configuration should match the backend implementation.
 
 For production deployments, configure these variables through the hosting provider rather than committing `.env` to the repository.
 
@@ -663,6 +673,10 @@ Secrets and deployment-specific configuration are kept outside the source code.
 
 The React interface is split into reusable components instead of placing the entire UI in a single component.
 
+**6. Observable AI workflows**
+
+LangSmith is integrated so LangGraph and LLM executions can be inspected at the individual conversation/thread level, making debugging and performance analysis easier.
+
 ---
 
 ## 🧪 Development
@@ -698,6 +712,8 @@ Building this project helped explore the integration of several production-orien
 - Styling interfaces with Tailwind CSS
 - Connecting frontend and backend services
 - Deploying a full-stack AI application on Render
+- Integrating LangSmith for LangGraph/LLM observability and tracing
+- Inspecting individual conversation threads and their workflow executions
 - Managing environment variables and production configuration
 
 ---
@@ -719,5 +735,5 @@ If you find the project interesting, consider giving the repository a ⭐ on Git
 ---
 
 <p align="center">
-  Built with ❤️ using React, FastAPI, LangGraph, PostgreSQL & Hugging Face
+  Built with ❤️ using React, FastAPI, LangGraph, PostgreSQL, Hugging Face & LangSmith
 </p>
