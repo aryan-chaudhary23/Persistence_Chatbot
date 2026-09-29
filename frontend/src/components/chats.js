@@ -1,5 +1,222 @@
 import React, { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+import rehypeSanitize from "rehype-sanitize";
+
+import "highlight.js/styles/github-dark.css";
+
 import { useStore } from "../context/StoreContext";
+
+const MarkdownMessage = ({ content }) => {
+  return (
+    <div
+      className="
+        markdown-content
+        max-w-full
+        overflow-x-auto
+        break-words
+        text-[12px]
+        sm:text-[13px]
+        leading-6
+        text-gray-300/90
+      "
+    >
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[
+          rehypeSanitize,
+          rehypeHighlight,
+        ]}
+        components={{
+          h1: ({ children }) => (
+            <h1 className="mt-4 mb-3 text-xl font-semibold text-gray-100">
+              {children}
+            </h1>
+          ),
+
+          h2: ({ children }) => (
+            <h2 className="mt-4 mb-3 text-lg font-semibold text-gray-100">
+              {children}
+            </h2>
+          ),
+
+          h3: ({ children }) => (
+            <h3 className="mt-4 mb-2 text-base font-semibold text-gray-200">
+              {children}
+            </h3>
+          ),
+
+          p: ({ children }) => (
+            <p className="mb-3 last:mb-0">
+              {children}
+            </p>
+          ),
+
+          strong: ({ children }) => (
+            <strong className="font-semibold text-gray-100">
+              {children}
+            </strong>
+          ),
+
+          em: ({ children }) => (
+            <em className="italic text-gray-300">
+              {children}
+            </em>
+          ),
+
+          ul: ({ children }) => (
+            <ul className="mb-3 ml-5 list-disc space-y-1">
+              {children}
+            </ul>
+          ),
+
+          ol: ({ children }) => (
+            <ol className="mb-3 ml-5 list-decimal space-y-1">
+              {children}
+            </ol>
+          ),
+
+          li: ({ children }) => (
+            <li className="pl-1">
+              {children}
+            </li>
+          ),
+
+          blockquote: ({ children }) => (
+            <blockquote
+              className="
+                my-3
+                border-l-2
+                border-violet-400/40
+                pl-4
+                italic
+                text-gray-400
+              "
+            >
+              {children}
+            </blockquote>
+          ),
+
+          a: ({ href, children }) => (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-violet-400 hover:text-violet-300 underline underline-offset-2"
+            >
+              {children}
+            </a>
+          ),
+
+          hr: () => (
+            <hr className="my-4 border-white/[0.08]" />
+          ),
+
+          table: ({ children }) => (
+            <div className="my-4 w-full overflow-x-auto rounded-lg border border-white/[0.08]">
+              <table className="w-full min-w-[500px] border-collapse text-left">
+                {children}
+              </table>
+            </div>
+          ),
+
+          thead: ({ children }) => (
+            <thead className="bg-white/[0.04]">
+              {children}
+            </thead>
+          ),
+
+          tbody: ({ children }) => (
+            <tbody className="divide-y divide-white/[0.06]">
+              {children}
+            </tbody>
+          ),
+
+          tr: ({ children }) => (
+            <tr className="hover:bg-white/[0.02]">
+              {children}
+            </tr>
+          ),
+
+          th: ({ children }) => (
+            <th className="border-b border-white/[0.08] px-3 py-2 font-semibold text-gray-200">
+              {children}
+            </th>
+          ),
+
+          td: ({ children }) => (
+            <td className="border-b border-white/[0.05] px-3 py-2 text-gray-400">
+              {children}
+            </td>
+          ),
+
+          code: ({ className, children, ...props }) => {
+            const isBlock = className?.includes("language-");
+
+            if (!isBlock) {
+              return (
+                <code
+                  className="
+                    rounded
+                    border
+                    border-white/[0.08]
+                    bg-black/30
+                    px-1.5
+                    py-0.5
+                    font-mono
+                    text-[11px]
+                    text-violet-300
+                  "
+                  {...props}
+                >
+                  {children}
+                </code>
+              );
+            }
+
+            return (
+              <code
+                className={`
+                  ${className}
+                  block
+                  overflow-x-auto
+                  p-4
+                  font-mono
+                  text-[11px]
+                  leading-5
+                `}
+                {...props}
+              >
+                {children}
+              </code>
+            );
+          },
+
+          pre: ({ children }) => (
+            <pre
+              className="
+                my-4
+                overflow-x-auto
+                rounded-xl
+                border
+                border-white/[0.08]
+                bg-[#0a0a0f]
+                p-0
+                shadow-[0_8px_30px_rgba(0,0,0,0.25)]
+              "
+            >
+              {children}
+            </pre>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+};
+
 
 const Messages = () => {
   const {
@@ -1000,26 +1217,30 @@ const Messages = () => {
 
 
                   {/* Message content */}
-                  <p
-                    className="
-                      max-w-full
+                  {message.role === "assistant" ? (
+                    <MarkdownMessage content={message.content} />
+                  ) : (
+                    <p
+                      className="
+                        max-w-full
 
-                      overflow-wrap-anywhere
-                      break-words
+                        overflow-wrap-anywhere
+                        break-words
 
-                      text-[12px]
-                      sm:text-[13px]
+                        text-[12px]
+                        sm:text-[13px]
 
-                      leading-5
-                      sm:leading-6
+                        leading-5
+                        sm:leading-6
 
-                      whitespace-pre-wrap
+                        whitespace-pre-wrap
 
-                      text-gray-300/90
-                    "
-                  >
-                    {message.content}
-                  </p>
+                        text-gray-300/90
+                      "
+                    >
+                      {message.content}
+                    </p>
+                  )}
 
                 </div>
 
