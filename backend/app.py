@@ -1,5 +1,6 @@
 import sys
 from dotenv import load_dotenv
+load_dotenv()
 from typing import TypedDict, Annotated
 from langgraph.graph import StateGraph, START, END
 from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
@@ -13,7 +14,6 @@ from fastapi.responses import JSONResponse
 import json
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
-load_dotenv()
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
