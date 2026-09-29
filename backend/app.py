@@ -28,7 +28,7 @@ llm = HuggingFaceEndpoint(
     repo_id="openai/gpt-oss-20b",
     task="conversational",
     temperature=0.3,
-    max_new_tokens=512,
+    max_new_tokens=4096,
 )
 
 model = ChatHuggingFace(llm=llm)
