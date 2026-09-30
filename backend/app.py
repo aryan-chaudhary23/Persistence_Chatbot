@@ -14,6 +14,11 @@ from fastapi.responses import JSONResponse
 import json
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
+from langgraph.prebuilt import ToolNode, tools_condition
+from langchain_community.tools import DuckDuckGoSearchRun
+from langchain_core.tools import tool
+import requests
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -23,6 +28,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+search_tool = DuckDuckGoSearchRun(region="us-en")
+@tool
+def calculator(first_num:float, second_num: float, operation:str) -> dict:
+    """ 
+    Perform a basic arithmetic operation on two numbers.
+    Supported operations are: add, subtract, multiply, divide.
+    """
+    try:
+        if operation == "add":
+            result = first_num + second_num
+        elif operation == "subtract":
+            result = first_num - second_num
+        elif operation == "multiply":
+            result = first_num * second_num
+        elif operation == "divide":
+            if second_num == 0:
+                raise ValueError("Cannot divide by zero.")
+            result = first_num / second_num
+        else:
+            raise ValueError(f"Unsupported operation: {operation}")
+        
+        return {"first_num": first_num, "second_num": second_num, "operation": operation, "result": result}
+    except Exception as e:
+        return {"error": str(e)}
+
+@tool
+def get_stock_price(symbol: str) -> dict:
+    """
+    Fetch the current stock price for a given symbol (e.g. 'AAPL', 'TSLA').
+    using Alpha Vantage with API key from environment variable ALPHA_VANTAGE_API_KEY.
+    """
+    try:
+        url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={os.getenv('ALPHA_VANTAGE_API_KEY')}"
+        r= requests.get(url)
+        return r.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+tools = [calculator, get_stock_price,search_tool]
 
 llm = HuggingFaceEndpoint(
     repo_id="openai/gpt-oss-20b",
@@ -30,8 +74,10 @@ llm = HuggingFaceEndpoint(
     temperature=0.3,
     max_new_tokens=4096,
 )
+llm2=ChatHuggingFace(llm=llm)
 
-model = ChatHuggingFace(llm=llm)
+model = llm2.bind_tools(tools)
+llm_with_tools  = model.bind_tools(tools)
 
 class Convo(TypedDict):
 
@@ -43,11 +89,19 @@ def run_model(state: Convo):
     response = model.invoke(state["messages"])
     return {'messages': [response]}
 
+def chat_node(state: Convo):
+    """LLM node that may answer or request a tool call. It will return a message with the tool call if needed."""
+    messages = state["messages"]
+    response = llm_with_tools.invoke(messages)
+    return {'messages': [response]}
+tool_node = ToolNode(tools)
 
 graph = StateGraph(Convo)
-graph.add_node('talking_phase', run_model)
-graph.add_edge(START, 'talking_phase')
-graph.add_edge('talking_phase', END)
+graph.add_node("chat_node", chat_node)
+graph.add_node("tools", tool_node)
+graph.add_edge(START, "chat_node")
+graph.add_conditional_edges("chat_node",tools_condition)
+graph.add_edge("tools", "chat_node")
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 checkpointer_context = PostgresSaver.from_conn_string(DATABASE_URL)
@@ -175,7 +229,8 @@ def old_chat( request: OldChatRequest):
     save_message(thread_id, "user", message)
     config = {
     "configurable": {
-        "thread_id": thread_id
+        "thread_id": thread_id,
+        "recursion_limit": 5
     }
     }
     result = workflow.invoke({"messages": [HumanMessage(content=message)]},config=config)
@@ -208,7 +263,8 @@ def new_chat(request: NewChatRequest):
     save_message(thread_id, "user", message)
     config = {
     "configurable": {
-        "thread_id": thread_id
+        "thread_id": thread_id,
+        "recursion_limit": 5
     }
     }
     result = workflow.invoke({"messages": [HumanMessage(content=message)]},config=config)
